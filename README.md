@@ -73,6 +73,14 @@ Disable the default libvirt network::
 Make also sure that no other virtualization (VirtualBox, docker, etc.)
 is active on the host machine.
 
+Disable and remove ): apparmor as mentioned at
+https://forum.opennebula.org/t/error-deploying-vm-could-not-create-domain-on-centos-7-kvm/948/11::
+
+        $ sudo service apparmor stop  # is this necessary?
+        $ sudo update-rc.d -f apparmor remove  # is this necessary?
+        $ sudo apt-get -y remove apparmor  # is this necessary?
+        $ sudo reboot  # is this necessary?
+
 Start the virtual OpenNebula setup with::
 
         $ git clone https://github.com/marcindulak/vagrant-opennebula-centos7.git
@@ -90,14 +98,14 @@ After having the frontend and node running test a basic OpenNebula usage scenari
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onehost create node1 -i kvm -v kvm -n dummy'"
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onehost list'"
 
-- create a network template, consisting of three virtual machines (SIZE = 3):
+- create a network template, consisting of potentially three virtual machines (SIZE = 3):
 
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'echo NAME = private > mynetwork.one; echo BRIDGE = br1 >> mynetwork.one; echo AR = [TYPE = IP4, IP = 192.168.10.101, SIZE = 3] >> mynetwork.one'"
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onevnet list'"
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onevnet create mynetwork.one'"
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onevnet list'"
 
-- fetch a CentOS 7 image::
+- fetch a CentOS 7 image from OpenNebula's marketplace::
 
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'oneimage create --name CentOS-7-one-4.8 --path http://marketplace.c12g.com/appliance/53e7bf928fb81d6a69000002/download --driver qcow2 -d default'"
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'oneimage list'"
