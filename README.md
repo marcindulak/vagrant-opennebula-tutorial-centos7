@@ -37,11 +37,11 @@ Vagrant reserves eth0 and this cannot be currently changed
 		  |-------------- | cluster: node1, ..., nodeN |
         				  ------------------------------
         				   |
-			               eth0|
-		             192.168.10.101|
-				         -------
-				         | VM0 | ...
-				         -------
+			           eth0|
+		         192.168.10.101|
+				      -------
+				      | VM0 | ...
+				      -------
 
 
 ------------
