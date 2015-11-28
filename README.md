@@ -107,9 +107,9 @@ After having the frontend and node running test a basic OpenNebula usage scenari
 
 - start the VM using this template::
 
-            $ sleep 10  # wait for template to become ready
+            $ sleep 30  # wait for template to become ready
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onetemplate instantiate ttylinux'"
-            $ sleep 60  # wait for the VM to start
+            $ sleep 300  # wait for the VM to start
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onevm list'"
             $ vagrant ssh frontend -c "sudo su - -c 'yum -y install sshpass'"
             $ vagrant ssh frontend -c "sshpass -p password ssh -o StrictHostKeyChecking=no root@192.168.10.100 '/sbin/ifconfig eth0'"
