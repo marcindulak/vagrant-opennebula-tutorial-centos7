@@ -2,8 +2,6 @@
 Description
 -----------
 
-Proof of concept.
-
 Configures OpenNebula cluster using libvirt/kvm nested virtualization in Vagrant.
 Vagrant starts a CentOS 7 frontend and OpenNebula worker nodes. The OpenNebula frontend
 is then used to manage ttylinux virtual machines on the OpenNebula worker nodes.
