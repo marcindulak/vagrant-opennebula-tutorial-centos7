@@ -6,9 +6,9 @@ ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
 ONVER="4.14"
 
 hosts = {
-  'frontend' => {'ip' => '192.168.10.5', 'mac' => '52:54:00:00:10:05'},
-  'node1' => {'ip' => '192.168.10.11', 'mac' => '52:54:00:00:10:11'},
-  'node2' => {'ip' => '192.168.10.12', 'mac' => '52:54:00:00:10:12'}
+  'frontend' => {'hostname' => 'frontend', 'ip' => '192.168.10.5', 'mac' => '52:54:00:00:10:05'},
+  'node1' => {'hostname' => 'node1', 'ip' => '192.168.10.11', 'mac' => '52:54:00:00:10:11', 'vnc_port' => 15901},
+  'node2' => {'hostname' => 'node2', 'ip' => '192.168.10.12', 'mac' => '52:54:00:00:10:12', 'vnc_port' => 15902}
 }
 
 Vagrant.configure(2) do |config|
@@ -22,15 +22,19 @@ Vagrant.configure(2) do |config|
       v.nested = true
     end
   end
-  config.vm.define 'node1' do |node1|
-    node1.vm.box = 'centos/7'
-    node1.vm.box_url = 'centos/7'
-    node1.vm.network 'private_network', ip: hosts['node1']['ip'], mac: hosts['node1']['mac'], auto_config: false
-    node1.vm.network 'forwarded_port', guest: 5900, host: 15900
-    node1.vm.provider 'libvirt' do |v|
-      v.memory = 256
-      v.cpus = 1
-      v.nested = true
+  hosts.keys.sort.each do |host|
+    if host.start_with?("node")
+      config.vm.define hosts[host]['hostname'] do |node|
+        node.vm.box = 'centos/7'
+        node.vm.box_url = 'centos/7'
+        node.vm.network 'private_network', ip: hosts[host]['ip'], mac: hosts[host]['mac'], auto_config: false
+        node.vm.network 'forwarded_port', guest: 5900, host: hosts[host]['vnc_port']
+        node.vm.provider 'libvirt' do |v|
+          v.memory = 256
+          v.cpus = 1
+          v.nested = true
+        end
+      end
     end
   end
   # disable IPv6 on Linux
@@ -50,12 +54,7 @@ systemctl stop firewalld.service
 SCRIPT
   # common settings on all machines
   $etc_hosts = <<SCRIPT
-frontend=$1
-node1=$2
-cat <<END >> /etc/hosts
-$frontend frontend
-$node1 node1
-END
+echo "$*" >> /etc/hosts
 SCRIPT
   $epel7 = <<SCRIPT
 yum -y install https://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
@@ -155,11 +154,13 @@ ARPCHECK=no /sbin/ifup $DEVICE 2> /dev/null
 SCRIPT
   config.vm.define "frontend" do |frontend|
     # check for nested virtualization!
-    frontend.vm.provision :shell, :inline => 'egrep -c "(vmx|svm)" /proc/cpuinfo'
+    frontend.vm.provision :shell, :inline => 'egrep -c "(vmx|svm)" /proc/cpuinfo > /dev/null'
     frontend.vm.provision :shell, :inline => 'hostname frontend', run: 'always'
-    frontend.vm.provision 'shell' do |s|
-      s.inline = $etc_hosts
-      s.args   = hosts['frontend']['ip'] + ' ' + hosts['node1']['ip']
+    hosts.keys.sort.each do |k|
+      frontend.vm.provision 'shell' do |s|
+        s.inline = $etc_hosts
+        s.args   = hosts[k]['ip'] + ' ' + hosts[k]['hostname']
+      end
     end
     frontend.vm.provision :shell, :inline => $linux_disable_ipv6
     frontend.vm.provision :shell, :inline => $setenforce_0
@@ -205,42 +206,49 @@ SCRIPT
     frontend.vm.provision :shell, :inline => 'systemctl enable opennebula'
     frontend.vm.provision :shell, :inline => 'systemctl start opennebula-sunstone'
     frontend.vm.provision :shell, :inline => 'systemctl enable opennebula-sunstone'
+    # root_squash fails for me
     frontend.vm.provision :shell, :inline => 'echo "/var/lib/one/ *(rw,sync,no_subtree_check,no_root_squash)" > /etc/exports'
     frontend.vm.provision :shell, :inline => 'systemctl start rpcbind nfs-server'
     frontend.vm.provision :shell, :inline => 'systemctl enable rpcbind nfs-server'
     frontend.vm.provision :shell, :inline => 'sudo su - oneadmin -c "sleep 10&& onevm list"'
   end
-  config.vm.define 'node1' do |node1|
-    # check for nested virtualization!
-    node1.vm.provision :shell, :inline => 'egrep -c "(vmx|svm)" /proc/cpuinfo'
-    node1.vm.provision :shell, :inline => 'hostname node1', run: 'always'
-    node1.vm.provision 'shell' do |s|
-      s.inline = $etc_hosts
-      s.args   = hosts['frontend']['ip'] + ' ' + hosts['node1']['ip']
+  hosts.keys.sort.each do |host|
+    if host.start_with?("node")
+      config.vm.define hosts[host]['hostname'] do |node|
+        # check for nested virtualization!
+        node.vm.provision :shell, :inline => 'egrep -c "(vmx|svm)" /proc/cpuinfo > /dev/null'
+        node.vm.provision :shell, :inline => 'hostname ' + hosts[host]['hostname'], run: 'always'
+        hosts.keys.sort.each do |k|
+          node.vm.provision 'shell' do |s|
+            s.inline = $etc_hosts
+            s.args   = hosts[k]['ip'] + ' ' + hosts[k]['hostname']
+          end
+        end
+        node.vm.provision :shell, :inline => $linux_disable_ipv6
+        node.vm.provision :shell, :inline => $setenforce_0
+        node.vm.provision :shell, :inline => $epel7
+        node.vm.provision 'shell' do |s|
+          s.inline = $opennebula_el
+          s.args   = ONVER
+        end
+        node.vm.provision :shell, :inline => 'yum -y install opennebula-node-kvm'
+        node.vm.provision 'shell' do |s|
+          s.inline = $ifcfg_bridge
+          s.args   = 'eth1 br1 ' + hosts[host]['mac']
+        end
+        node.vm.provision :shell, :inline => 'yum -y install bridge-utils'
+        node.vm.provision 'shell' do |s|
+          s.inline = $ifcfg
+          s.args   = hosts[host]['ip'] + ' 255.255.255.0 br1 Bridge'
+        end
+        #end
+        node.vm.provision :shell, :inline => 'ifup eth1', run: 'always'
+        node.vm.provision :shell, :inline => 'ifup br1', run: 'always'
+        node.vm.provision :shell, :inline => 'echo frontend:/var/lib/one/  /var/lib/one/  nfs   soft,intr,rsize=8192,wsize=8192,noauto >> /etc/fstab'
+        node.vm.provision :shell, :inline => 'mount /var/lib/one/'
+        node.vm.provision :shell, :inline => 'systemctl start libvirtd'
+        node.vm.provision :shell, :inline => 'systemctl enable libvirtd'
+      end
     end
-    node1.vm.provision :shell, :inline => $linux_disable_ipv6
-    node1.vm.provision :shell, :inline => $setenforce_0
-    node1.vm.provision :shell, :inline => $epel7
-    node1.vm.provision 'shell' do |s|
-      s.inline = $opennebula_el
-      s.args   = ONVER
-    end
-    node1.vm.provision :shell, :inline => 'yum -y install opennebula-node-kvm'
-    node1.vm.provision 'shell' do |s|
-      s.inline = $ifcfg_bridge
-      s.args   = 'eth1 br1 ' + hosts['node1']['mac']
-    end
-    node1.vm.provision :shell, :inline => 'yum -y install bridge-utils'
-    node1.vm.provision 'shell' do |s|
-      s.inline = $ifcfg
-      s.args   = hosts['node1']['ip'] + ' 255.255.255.0 br1 Bridge'
-    end
-    #end
-    node1.vm.provision :shell, :inline => 'ifup eth1', run: 'always'
-    node1.vm.provision :shell, :inline => 'ifup br1', run: 'always'
-    node1.vm.provision :shell, :inline => 'echo frontend:/var/lib/one/  /var/lib/one/  nfs   soft,intr,rsize=8192,wsize=8192,noauto >> /etc/fstab'
-    node1.vm.provision :shell, :inline => 'mount /var/lib/one/'
-    node1.vm.provision :shell, :inline => 'systemctl start libvirtd'
-    node1.vm.provision :shell, :inline => 'systemctl enable libvirtd'
   end
 end
