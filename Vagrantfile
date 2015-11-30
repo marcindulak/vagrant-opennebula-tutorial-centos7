@@ -241,7 +241,6 @@ SCRIPT
           s.inline = $ifcfg
           s.args   = hosts[host]['ip'] + ' 255.255.255.0 br1 Bridge'
         end
-        #end
         node.vm.provision :shell, :inline => 'ifup eth1', run: 'always'
         node.vm.provision :shell, :inline => 'ifup br1', run: 'always'
         node.vm.provision :shell, :inline => 'echo frontend:/var/lib/one/  /var/lib/one/  nfs   soft,intr,rsize=8192,wsize=8192,noauto >> /etc/fstab'
