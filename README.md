@@ -67,6 +67,11 @@ Disable the default libvirt network::
         $ virsh net-autostart default --disable
         $ sudo service libvirt-bin restart
 
+and delete the default storage pool::
+
+        $ virsh pool-destroy default
+        $ virsh pool-undefine default
+
 **Note** libvirt may have problems if ip6tables are not running.
 Make also sure that no other virtualization (VirtualBox, etc.)
 is active on the host machine.
