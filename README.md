@@ -164,3 +164,11 @@ Problems
 
    The one succesfull case may have had something to do with the amount of RAM assigned to the OpenNebula
    worker node and guest, but I'm unable to reproduce this.
+
+2. root_squash results in errors `frontend:/var/log/one/0.log`:
+
+        [Z0][VMM][I]: Command execution fail: cat << EOT | /var/tmp/one/vmm/kvm/deploy '/var/lib/one//datastores/0/0/deployment.0' 'node1' 0 node1
+        Z0][VMM][I]: error: Failed to create domain from /var/lib/one//datastores/0/0/deployment.0
+        [Z0][VMM][I]: error: can't canonicalize path '/var/lib/one//datastores/0/0/disk.1': Permission denied
+        [Z0][VMM][E]: Could not create domain from /var/lib/one//datastores/0/0/deployment.0
+
