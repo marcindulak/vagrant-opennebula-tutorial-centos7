@@ -70,7 +70,6 @@ Disable the default libvirt network::
 and delete the default storage pool::
 
         $ virsh pool-destroy default
-        $ virsh pool-undefine default
 
 **Note** libvirt may have problems if ip6tables are not running.
 Make also sure that no other virtualization (VirtualBox, etc.)
@@ -90,12 +89,12 @@ After having the frontend and node running test a basic OpenNebula usage scenari
 
 - add the started worker nodes to the cluster:
 
-            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onehost create node1 -i kvm -v kvm -n dummy'"
+            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onehost create node1 -i kvm -v kvm'"
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onehost list'"
 
 - create a network template, consisting of potentially three virtual machines (SIZE = 3):
 
-            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'echo NAME = private > mynetwork.one; echo BRIDGE = br1 >> mynetwork.one; echo AR = [TYPE = IP4, IP = 192.168.10.100, SIZE = 3] >> mynetwork.one'"
+            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'echo NAME = private > mynetwork.one; echo VN_MAD = dummy >> mynetwork.one; echo BRIDGE = br1 >> mynetwork.one; echo AR = [TYPE = IP4, IP = 192.168.10.100, SIZE = 3] >> mynetwork.one'"
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onevnet list'"
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onevnet create mynetwork.one'"
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onevnet list'"

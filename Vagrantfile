@@ -3,7 +3,7 @@
 
 ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
 
-ONVER="4.14"
+ONVER="5.0"
 
 hosts = {
   'frontend' => {'hostname' => 'frontend', 'ip' => '192.168.10.5', 'mac' => '52:54:00:00:10:05'},
@@ -159,7 +159,7 @@ SCRIPT
     hosts.keys.sort.each do |k|
       frontend.vm.provision 'shell' do |s|
         s.inline = $etc_hosts
-        s.args   = hosts[k]['ip'] + ' ' + hosts[k]['hostname']
+        s.args   = [hosts[k]['ip'], hosts[k]['hostname']]
       end
     end
     frontend.vm.provision :shell, :inline => $linux_disable_ipv6
@@ -167,7 +167,7 @@ SCRIPT
     frontend.vm.provision :shell, :inline => $epel7
     frontend.vm.provision 'shell' do |s|
       s.inline = $opennebula_el
-      s.args   = ONVER
+      s.args   = [ONVER]
     end
     frontend.vm.provision :shell, :inline => 'yum -y install opennebula-server opennebula-sunstone'
     frontend.vm.provision :shell, :inline => $root_install_gems_el
@@ -177,31 +177,33 @@ SCRIPT
     frontend.vm.provision :file, source: '~/.vagrant.d/insecure_private_key', destination: '~vagrant/.ssh/id_rsa'
     frontend.vm.provision 'shell' do |s|
       s.inline = $key_based_ssh
-      s.args   = 'oneadmin'
+      s.args   = ['oneadmin']
     end
     frontend.vm.provision 'shell' do |s|
       s.inline = $dotssh_chmod_600
-      s.args   = 'oneadmin'
+      s.args   = ['oneadmin']
     end
     frontend.vm.provision 'shell' do |s|
       s.inline = $dotssh_config
-      s.args   = 'oneadmin'
+      s.args   = ['oneadmin']
     end
     frontend.vm.provision 'shell' do |s|
       s.inline = $dotssh_chown
-      s.args   = 'oneadmin oneadmin'
+      s.args   = ['oneadmin', 'oneadmin']
     end
     frontend.vm.provision 'shell' do |s|
       s.inline = $ifcfg_bridge
-      s.args   = 'eth1 br1 ' + hosts['frontend']['mac']
+      s.args   = ['eth1', 'br1', hosts['frontend']['mac']]
     end
     frontend.vm.provision :shell, :inline => 'yum -y install bridge-utils'
     frontend.vm.provision 'shell' do |s|
       s.inline = $ifcfg
-      s.args   = hosts['frontend']['ip'] + ' 255.255.255.0 br1 Bridge'
+      s.args   = [hosts['frontend']['ip'], '255.255.255.0', 'br1', 'Bridge']
     end
     frontend.vm.provision :shell, :inline => 'ifup eth1', run: 'always'
     frontend.vm.provision :shell, :inline => 'ifup br1', run: 'always'
+    # restarting network fixes RTNETLINK answers: File exists
+    frontend.vm.provision :shell, :inline => 'systemctl restart network'
     frontend.vm.provision :shell, :inline => 'systemctl start opennebula'
     frontend.vm.provision :shell, :inline => 'systemctl enable opennebula'
     frontend.vm.provision :shell, :inline => 'systemctl start opennebula-sunstone'
@@ -221,7 +223,7 @@ SCRIPT
         hosts.keys.sort.each do |k|
           node.vm.provision 'shell' do |s|
             s.inline = $etc_hosts
-            s.args   = hosts[k]['ip'] + ' ' + hosts[k]['hostname']
+            s.args   = [hosts[k]['ip'], hosts[k]['hostname']]
           end
         end
         node.vm.provision :shell, :inline => $linux_disable_ipv6
@@ -229,20 +231,22 @@ SCRIPT
         node.vm.provision :shell, :inline => $epel7
         node.vm.provision 'shell' do |s|
           s.inline = $opennebula_el
-          s.args   = ONVER
+          s.args   = [ONVER]
         end
         node.vm.provision :shell, :inline => 'yum -y install opennebula-node-kvm'
         node.vm.provision 'shell' do |s|
           s.inline = $ifcfg_bridge
-          s.args   = 'eth1 br1 ' + hosts[host]['mac']
+          s.args   = ['eth1', 'br1', hosts[host]['mac']]
         end
         node.vm.provision :shell, :inline => 'yum -y install bridge-utils'
         node.vm.provision 'shell' do |s|
           s.inline = $ifcfg
-          s.args   = hosts[host]['ip'] + ' 255.255.255.0 br1 Bridge'
+          s.args   = [hosts[host]['ip'], '255.255.255.0', 'br1', 'Bridge']
         end
         node.vm.provision :shell, :inline => 'ifup eth1', run: 'always'
         node.vm.provision :shell, :inline => 'ifup br1', run: 'always'
+        # restarting network fixes RTNETLINK answers: File exists
+        node.vm.provision :shell, :inline => 'systemctl restart network'
         node.vm.provision :shell, :inline => 'echo frontend:/var/lib/one/  /var/lib/one/  nfs   soft,intr,rsize=8192,wsize=8192,noauto >> /etc/fstab'
         node.vm.provision :shell, :inline => 'mount /var/lib/one/'
         node.vm.provision :shell, :inline => 'systemctl start libvirtd'
