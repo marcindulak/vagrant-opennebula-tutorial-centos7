@@ -162,8 +162,7 @@ SCRIPT
         s.args   = [hosts[k]['ip'], hosts[k]['hostname']]
       end
     end
-    frontend.vm.provision :shell, :inline => $linux_disable_ipv6
-    frontend.vm.provision :shell, :inline => $setenforce_0
+    frontend.vm.provision :shell, :inline => $setenforce_0, run: 'always'
     frontend.vm.provision :shell, :inline => $epel7
     frontend.vm.provision 'shell' do |s|
       s.inline = $opennebula_el
@@ -204,6 +203,7 @@ SCRIPT
     frontend.vm.provision :shell, :inline => 'ifup br1', run: 'always'
     # restarting network fixes RTNETLINK answers: File exists
     frontend.vm.provision :shell, :inline => 'systemctl restart network'
+    frontend.vm.provision :shell, :inline => $linux_disable_ipv6, run: 'always'
     frontend.vm.provision :shell, :inline => 'systemctl start opennebula'
     frontend.vm.provision :shell, :inline => 'systemctl enable opennebula'
     frontend.vm.provision :shell, :inline => 'systemctl start opennebula-sunstone'
@@ -226,8 +226,7 @@ SCRIPT
             s.args   = [hosts[k]['ip'], hosts[k]['hostname']]
           end
         end
-        node.vm.provision :shell, :inline => $linux_disable_ipv6
-        node.vm.provision :shell, :inline => $setenforce_0
+        node.vm.provision :shell, :inline => $setenforce_0, run: 'always'
         node.vm.provision :shell, :inline => $epel7
         node.vm.provision 'shell' do |s|
           s.inline = $opennebula_el
@@ -247,6 +246,7 @@ SCRIPT
         node.vm.provision :shell, :inline => 'ifup br1', run: 'always'
         # restarting network fixes RTNETLINK answers: File exists
         node.vm.provision :shell, :inline => 'systemctl restart network'
+        node.vm.provision :shell, :inline => $linux_disable_ipv6, run: 'always'
         node.vm.provision :shell, :inline => 'echo frontend:/var/lib/one/  /var/lib/one/  nfs   soft,intr,rsize=8192,wsize=8192,noauto >> /etc/fstab'
         node.vm.provision :shell, :inline => 'mount /var/lib/one/'
         node.vm.provision :shell, :inline => 'systemctl start libvirtd'
