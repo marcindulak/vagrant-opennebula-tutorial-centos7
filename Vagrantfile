@@ -3,7 +3,7 @@
 
 ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
 
-ONVER="5.0"
+ONVER="5.2"
 
 hosts = {
   'frontend' => {'hostname' => 'frontend', 'ip' => '192.168.10.5', 'mac' => '52:54:00:00:10:05'},
