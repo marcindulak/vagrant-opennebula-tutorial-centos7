@@ -3,7 +3,7 @@
 
 ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
 
-ONVER="5.2"
+ONVER="5.4"
 
 hosts = {
   'frontend' => {'hostname' => 'frontend', 'ip' => '192.168.10.5', 'mac' => '52:54:00:00:10:05'},
@@ -30,7 +30,7 @@ Vagrant.configure(2) do |config|
         node.vm.box_url = 'centos/7'
         node.vm.synced_folder '.', '/vagrant', disabled: true
         node.vm.network 'private_network', ip: hosts[host]['ip'], mac: hosts[host]['mac'], auto_config: false
-        node.vm.network 'forwarded_port', guest: 5900, host: hosts[host]['vnc_port']
+        node.vm.network 'forwarded_port', adapter: 'eth1', host_ip: '*', guest: 5900, host: hosts[host]['vnc_port']
         node.vm.provider 'libvirt' do |v|
           v.memory = 256
           v.cpus = 1

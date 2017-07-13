@@ -101,7 +101,7 @@ After having the frontend and node running test a basic OpenNebula usage scenari
 
 - fetch a ttylinux image from OpenNebula's marketplace::
 
-            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'oneimage create --name ttylinux --path http://marketplace.c12g.com/appliance/4fc76a938fb81d3517000003/download -d default'"
+            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'oneimage create --name ttylinux --path http://marketplace.c12g.com/appliance/4fc76a938fb81d3517000003/download --datastore default --prefix hd'"
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'oneimage list'"
 
 - create a VM template using that image::
@@ -118,10 +118,12 @@ After having the frontend and node running test a basic OpenNebula usage scenari
             $ vagrant ssh frontend -c "sudo su - -c 'yum -y install sshpass'"
             $ vagrant ssh frontend -c "sshpass -p password ssh -o StrictHostKeyChecking=no root@192.168.10.100 '/sbin/ifconfig eth0'"
 
-Access the VM with VNC on the port forwarded by Vagrant from the guest node1:5900 to the host port 15901::
+Access the first VM with VNC on the port forwarded by Vagrant from the guest node1:5900 to the host port 15901::
 
         $ sudo apt-get install -y vinagre
         $ vinagre 127.0.0.1:15901
+
+Note that subsequent VMs started on node1 will get 5900 + N as the port number (https://dev.opennebula.org/issues/2045) and won't be accesible in this setup.
 
 When done, destroy the test machines with::
 
