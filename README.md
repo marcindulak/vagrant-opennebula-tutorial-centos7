@@ -101,7 +101,7 @@ After having the frontend and node running test a basic OpenNebula usage scenari
 
 - fetch a ttylinux image from OpenNebula's marketplace::
 
-            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'oneimage create --name ttylinux --path http://marketplace.c12g.com/appliance/4fc76a938fb81d3517000003/download --datastore default --prefix hd'"
+            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'oneimage create --name ttylinux --path http://marketplace.opennebula.systems/appliance/4fc76a938fb81d3517000003/download --datastore default --prefix hd'"
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'oneimage list'"
 
 - create a VM template using that image::
@@ -115,6 +115,15 @@ After having the frontend and node running test a basic OpenNebula usage scenari
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onetemplate instantiate ttylinux'"
             $ sleep 300  # wait for the VM to start
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onevm list'"
+
+- collect the information about the image, template and VM::
+
+            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'oneimage show 0'"
+            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onetemplate show 0'"
+            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onevm show 0'"
+
+- verify one can ssh to the VM::
+
             $ vagrant ssh frontend -c "sudo su - -c 'yum -y install sshpass'"
             $ vagrant ssh frontend -c "sshpass -p password ssh -o StrictHostKeyChecking=no root@192.168.10.100 '/sbin/ifconfig eth0'"
 
