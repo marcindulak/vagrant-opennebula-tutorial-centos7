@@ -4,11 +4,15 @@
 ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
 
 ONVER="5.4"
+ONEPASSWORD='password'
 
 hosts = {
-  'frontend' => {'hostname' => 'frontend', 'ip' => '192.168.10.5', 'mac' => '52:54:00:00:10:05'},
-  'node1' => {'hostname' => 'node1', 'ip' => '192.168.10.11', 'mac' => '52:54:00:00:10:11', 'vnc_port' => 15901},
-  'node2' => {'hostname' => 'node2', 'ip' => '192.168.10.12', 'mac' => '52:54:00:00:10:12', 'vnc_port' => 15902}
+  'frontend' => {'hostname' => 'frontend', 'ip' => '192.168.10.5', 'mac' => '52:54:00:00:10:05',
+                 'sunstone_port' => 19869},
+  'node1' => {'hostname' => 'node1', 'ip' => '192.168.10.11', 'mac' => '52:54:00:00:10:11',
+              'vnc_port' => 15900},
+  'node2' => {'hostname' => 'node2', 'ip' => '192.168.10.12', 'mac' => '52:54:00:00:10:12',
+              'vnc_port' => 25900}
 }
 
 Vagrant.configure(2) do |config|
@@ -17,10 +21,16 @@ Vagrant.configure(2) do |config|
     frontend.vm.box_url = 'centos/7'
     frontend.vm.synced_folder '.', '/vagrant', disabled: true
     frontend.vm.network 'private_network', ip: hosts['frontend']['ip'], mac: hosts['frontend']['mac'], auto_config: false
-    frontend.vm.provider 'libvirt' do |v|
-      v.memory = 256
-      v.cpus = 1
-      v.nested = true
+    frontend.vm.network 'forwarded_port', adapter: 'eth1', host_ip: '*', guest: 9869, host: hosts['frontend']['sunstone_port']
+    frontend.vm.provider 'libvirt' do |p|
+      p.memory = 256
+      p.cpus = 1
+      p.nested = true
+      # https://github.com/vagrant-libvirt/vagrant-libvirt: management_network_address defaults to 192.168.121.0/24
+      p.management_network_name = 'vagrant-opennebula-tutorial-centos7'
+      p.management_network_address = '192.168.122.0/24'
+      # https://github.com/vagrant-libvirt/vagrant-libvirt/issues/402
+      p.management_network_mode = 'nat'
     end
   end
   hosts.keys.sort.each do |host|
@@ -31,10 +41,10 @@ Vagrant.configure(2) do |config|
         node.vm.synced_folder '.', '/vagrant', disabled: true
         node.vm.network 'private_network', ip: hosts[host]['ip'], mac: hosts[host]['mac'], auto_config: false
         node.vm.network 'forwarded_port', adapter: 'eth1', host_ip: '*', guest: 5900, host: hosts[host]['vnc_port']
-        node.vm.provider 'libvirt' do |v|
-          v.memory = 256
-          v.cpus = 1
-          v.nested = true
+        node.vm.provider 'libvirt' do |p|
+          p.memory = 768
+          p.cpus = 1
+          p.nested = true
         end
       end
     end
@@ -174,6 +184,8 @@ SCRIPT
     frontend.vm.provision :shell, :inline => $root_install_gems_el
     frontend.vm.provision :shell, :inline => 'yum -y install expect'
     frontend.vm.provision :shell, :inline => 'expect /root/install_gems'
+    # change the randonly generated oneadmin password
+    frontend.vm.provision :shell, :inline => 'echo oneadmin:' + ONEPASSWORD + ' > /var/lib/one/.one/one_auth'
     # configure key-based ssh for oneadmin user using vagrant's keys
     frontend.vm.provision :file, source: '~/.vagrant.d/insecure_private_key', destination: '~vagrant/.ssh/id_rsa'
     frontend.vm.provision 'shell' do |s|
