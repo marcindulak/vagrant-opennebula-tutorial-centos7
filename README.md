@@ -111,8 +111,8 @@ After having the frontend and node running test a basic OpenNebula usage scenari
 
 - update the template context with the root password (see https://docs.opennebula.org/5.4/operation/vm_setup/kvm.html). Specify `NETWORK=YES` (see https://docs.opennebula.org/5.4/operation/network_management/manage_vnets.html), otherwise opennebula won't configure network on testvm (only lo interface will be present)::
 
-            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'echo CONTEXT = [ USERNAME = root, PASSWORD = password, NETWORK = YES  ] > root_password.one'"
-            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onetemplate update testvm -a root_password.one'"
+            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'echo CONTEXT = [ USERNAME = root, PASSWORD = password, NETWORK = YES  ] > context.one'"
+            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onetemplate update testvm -a context.one'"
 
 - start the VM using this template::
 
@@ -121,7 +121,7 @@ After having the frontend and node running test a basic OpenNebula usage scenari
             $ sleep 300  # wait for the VM to start
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onevm list'"
 
-- collect the information about the host, network, image, template and VM::
+- collect the information about the host, network, image, template and VM (note that testvm is visible as one-0 to virsh)::
 
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onehost show 0'"
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onevnet show 0'"
