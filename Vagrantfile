@@ -69,7 +69,7 @@ SCRIPT
 echo "$*" >> /etc/hosts
 SCRIPT
   $epel7 = <<SCRIPT
-yum -y install https://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-10.noarch.rpm
+yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 SCRIPT
   $opennebula_el = <<SCRIPT
 ONVER=$1
