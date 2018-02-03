@@ -106,7 +106,7 @@ After having the frontend and node running test a basic OpenNebula usage scenari
 
 - create a network template, consisting of potentially three virtual machines (SIZE = 3):
 
-            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'echo NAME = private > private.one; echo VN_MAD = dummy >> private.one; echo BRIDGE = br1 >> private.one; echo AR = [TYPE = IP4, IP = 192.168.10.100, SIZE = 3] >> private.one'"
+            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'echo NAME = private > private.one; echo VN_MAD = dummy >> private.one; echo BRIDGE = br1 >> private.one; echo DNS = 8.8.8.8 >> private.one; echo GATEWAY = 192.168.10.5 >> private.one; echo AR = [TYPE = IP4, IP = 192.168.10.100, SIZE = 3] >> private.one'"
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onevnet list'"
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onevnet create private.one'"
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onevnet list'"
@@ -121,16 +121,17 @@ After having the frontend and node running test a basic OpenNebula usage scenari
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onetemplate create --name testvm --cpu 1 --vcpu 1 --memory 256 --arch x86_64 --disk testvm --nic private --vnc --ssh --net_context'"
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onetemplate list'"
 
-- update the template context with the root password (see https://docs.opennebula.org/5.4/operation/vm_setup/kvm.html). Specify `NETWORK=YES` (see https://docs.opennebula.org/5.4/operation/network_management/manage_vnets.html), otherwise opennebula won't configure network on testvm (only lo interface will be present)::
+- update the template context with the root password (see https://docs.opennebula.org/5.4/operation/vm_setup/kvm.html). Specify `NETWORK=YES` (see https://docs.opennebula.org/5.4/operation/network_management/manage_vnets.html), otherwise opennebula won't configure network on testvm (only lo interface will be present). Moreover in this particular one needs to make sure that password login is allowed (https://forum.opennebula.org/t/password-authentication-no-longer-allowed-in-the-centos7-marketplace-image)::
 
-            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'echo CONTEXT = [ USERNAME = root, PASSWORD = password, NETWORK = YES  ] > context.one'"
+            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'cp /vagrant/context.one .'"
+            $ vagrant ssh frontend -c "sudo su - oneadmin -c 'chmod o-rwx context.one'"
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onetemplate update testvm -a context.one'"
 
 - start the VM using this template::
 
             $ sleep 30  # wait for template to become ready
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onetemplate instantiate testvm'"
-            $ sleep 300  # wait for the VM to start
+            $ sleep 300  # wait for the image to be downloaded and the VM to start
             $ vagrant ssh frontend -c "sudo su - oneadmin -c 'onevm list'"
 
 - collect the information about the host, network, image, template and VM (note that testvm is visible as one-0 to virsh)::
@@ -181,3 +182,8 @@ BSD 2-clause
 Problems
 --------
 
+https://serverfault.com/questions/238089/nat-and-two-bridges
+I you want to use the MASQUERADE target (if your public IP changes for example), you should put the rule on the interface where the public address is setup, eth0 :
+[root@frontend ~]# iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+[root@frontend ~]# sysctl -w net.ipv4.ip_forward=1
+[root@frontend ~]# cat /proc/sys/net/ipv4/ip_forward

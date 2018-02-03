@@ -19,7 +19,7 @@ Vagrant.configure(2) do |config|
   config.vm.define 'frontend' do |frontend|
     frontend.vm.box = 'centos/7'
     frontend.vm.box_url = 'centos/7'
-    frontend.vm.synced_folder '.', '/vagrant', disabled: true
+    frontend.vm.synced_folder '.', '/vagrant', disabled: false
     frontend.vm.network 'private_network', ip: hosts['frontend']['ip'], mac: hosts['frontend']['mac'], auto_config: false
     frontend.vm.network 'forwarded_port', adapter: 'eth1', host_ip: '*', guest: 9869, host: hosts['frontend']['sunstone_port']
     frontend.vm.provider 'libvirt' do |p|

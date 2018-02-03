@@ -1,0 +1,1 @@
+CONTEXT = [ USERNAME = root, PASSWORD = password, NETWORK = YES, START_SCRIPT = "sed -i -e 's/.*PasswordAuthentication .*/PasswordAuthentication yes/' /etc/ssh/sshd_config&& sed -i -e 's/.*PermitRootLogin .*/PermitRootLogin yes/' /etc/ssh/sshd_config&& sed -i -e 's/.*UseDNS .*/UseDNS no/' /etc/ssh/sshd_config&& systemctl restart sshd" ]
